@@ -1,0 +1,687 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-03-11T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023",
+  "resources": [
+    {
+      "_id": "wrk_minhavenda",
+      "_type": "workspace",
+      "name": "MinhaVenda NestJS",
+      "description": "Testes manuais da API e-commerce MinhaVenda (NestJS)",
+      "scope": "collection"
+    },
+
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_minhavenda",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3000/api",
+        "token_cliente": "",
+        "token_admin": "",
+        "produto_id": "",
+        "categoria_id": "",
+        "carrinho_item_id": "",
+        "pedido_id": ""
+      }
+    },
+
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "🔐 Auth"
+    },
+    {
+      "_id": "req_register_cliente",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Registrar Cliente",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao@exemplo.com\",\n  \"senha\": \"Senha@123\",\n  \"tipo\": \"CLIENTE\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_register_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Registrar Admin",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Admin Master\",\n  \"email\": \"admin@minhavenda.com\",\n  \"senha\": \"Admin@123\",\n  \"tipo\": \"ADMIN\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_login_cliente",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login Cliente",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"joao@exemplo.com\",\n  \"senha\": \"Senha@123\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_login_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login Admin",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@minhavenda.com\",\n  \"senha\": \"Admin@123\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_alterar_senha",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Alterar Senha",
+      "method": "POST",
+      "url": "{{ base_url }}/auth/alterar-senha",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"senhaAtual\": \"Senha@123\",\n  \"novaSenha\": \"NovaSenha@456\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_categorias",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "📂 Categorias"
+    },
+    {
+      "_id": "req_listar_categorias",
+      "_type": "request",
+      "parentId": "fld_categorias",
+      "name": "Listar Categorias (público)",
+      "method": "GET",
+      "url": "{{ base_url }}/categorias",
+      "headers": []
+    },
+    {
+      "_id": "req_buscar_categoria",
+      "_type": "request",
+      "parentId": "fld_categorias",
+      "name": "Buscar Categoria por ID (público)",
+      "method": "GET",
+      "url": "{{ base_url }}/categorias/{{ categoria_id }}",
+      "headers": []
+    },
+    {
+      "_id": "req_criar_categoria",
+      "_type": "request",
+      "parentId": "fld_categorias",
+      "name": "Criar Categoria (ADMIN)",
+      "method": "POST",
+      "url": "{{ base_url }}/categorias",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Eletrônicos\",\n  \"descricao\": \"Produtos eletrônicos em geral\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_atualizar_categoria",
+      "_type": "request",
+      "parentId": "fld_categorias",
+      "name": "Atualizar Categoria (ADMIN)",
+      "method": "PUT",
+      "url": "{{ base_url }}/categorias/{{ categoria_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Eletrônicos e Gadgets\",\n  \"descricao\": \"Produtos eletrônicos, gadgets e acessórios\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_excluir_categoria",
+      "_type": "request",
+      "parentId": "fld_categorias",
+      "name": "Excluir Categoria (ADMIN)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/categorias/{{ categoria_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_produtos",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "📦 Produtos"
+    },
+    {
+      "_id": "req_listar_produtos",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Listar Produtos (público)",
+      "method": "GET",
+      "url": "{{ base_url }}/produtos",
+      "parameters": [
+        { "name": "ativo", "value": "true" }
+      ],
+      "headers": []
+    },
+    {
+      "_id": "req_listar_produtos_filtro",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Listar Produtos com Filtros (público)",
+      "method": "GET",
+      "url": "{{ base_url }}/produtos?nome=camiseta&precoMin=10&precoMax=200&categoriaId={{ categoria_id }}&ativo=true",
+      "headers": []
+    },
+    {
+      "_id": "req_buscar_produto",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Buscar Produto por ID (público)",
+      "method": "GET",
+      "url": "{{ base_url }}/produtos/{{ produto_id }}",
+      "headers": []
+    },
+    {
+      "_id": "req_criar_produto",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Criar Produto (ADMIN)",
+      "method": "POST",
+      "url": "{{ base_url }}/produtos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Notebook Pro 15\",\n  \"descricao\": \"Notebook de alta performance com SSD 512GB e 16GB RAM\",\n  \"preco\": 4500.00,\n  \"categoriaId\": {{ categoria_id }},\n  \"ativo\": true\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_atualizar_produto",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Atualizar Produto (ADMIN)",
+      "method": "PUT",
+      "url": "{{ base_url }}/produtos/{{ produto_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nome\": \"Notebook Pro 15 - Edição Especial\",\n  \"descricao\": \"Notebook de alta performance, edição 2025\",\n  \"preco\": 4299.90,\n  \"ativo\": true\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_excluir_produto",
+      "_type": "request",
+      "parentId": "fld_produtos",
+      "name": "Excluir Produto (ADMIN)",
+      "method": "DELETE",
+      "url": "{{ base_url }}/produtos/{{ produto_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_estoque",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "🏭 Estoque"
+    },
+    {
+      "_id": "req_consultar_estoque",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Consultar Estoque do Produto (ADMIN)",
+      "method": "GET",
+      "url": "{{ base_url }}/estoque/produto/{{ produto_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_adicionar_estoque",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Adicionar Estoque (ADMIN)",
+      "method": "POST",
+      "url": "{{ base_url }}/estoque/produto/{{ produto_id }}/adicionar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 50\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_remover_estoque",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Remover Estoque (ADMIN)",
+      "method": "POST",
+      "url": "{{ base_url }}/estoque/produto/{{ produto_id }}/remover",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 5\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_ajustar_estoque",
+      "_type": "request",
+      "parentId": "fld_estoque",
+      "name": "Ajustar Estoque (ADMIN)",
+      "method": "PUT",
+      "url": "{{ base_url }}/estoque/produto/{{ produto_id }}/ajustar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 100\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_carrinho",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "🛒 Carrinho"
+    },
+    {
+      "_id": "req_obter_carrinho",
+      "_type": "request",
+      "parentId": "fld_carrinho",
+      "name": "Obter / Criar Carrinho Ativo",
+      "method": "GET",
+      "url": "{{ base_url }}/carrinho",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_adicionar_item_carrinho",
+      "_type": "request",
+      "parentId": "fld_carrinho",
+      "name": "Adicionar Item ao Carrinho",
+      "method": "POST",
+      "url": "{{ base_url }}/carrinho/itens",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"produtoId\": \"{{ produto_id }}\",\n  \"quantidade\": 2\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_atualizar_item_carrinho",
+      "_type": "request",
+      "parentId": "fld_carrinho",
+      "name": "Atualizar Quantidade do Item",
+      "method": "PUT",
+      "url": "{{ base_url }}/carrinho/itens/{{ carrinho_item_id }}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quantidade\": 3\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_remover_item_carrinho",
+      "_type": "request",
+      "parentId": "fld_carrinho",
+      "name": "Remover Item do Carrinho",
+      "method": "DELETE",
+      "url": "{{ base_url }}/carrinho/itens/{{ carrinho_item_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_limpar_carrinho",
+      "_type": "request",
+      "parentId": "fld_carrinho",
+      "name": "Limpar Carrinho",
+      "method": "DELETE",
+      "url": "{{ base_url }}/carrinho",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_pedidos_cliente",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "🧾 Pedidos (Cliente)"
+    },
+    {
+      "_id": "req_finalizar_checkout",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "Finalizar Checkout",
+      "method": "POST",
+      "url": "{{ base_url }}/checkout/finalizar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"enderecoEntrega\": \"Rua das Flores, 123 - São Paulo, SP - CEP 01000-000\",\n  \"observacoes\": \"Entregar no período da tarde\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_meus_pedidos",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "Listar Meus Pedidos",
+      "method": "GET",
+      "url": "{{ base_url }}/meus-pedidos",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_buscar_pedido_cliente",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "Buscar Pedido por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/pedidos/{{ pedido_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_pagar_pedido_cliente",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "Pagar Pedido (Cliente)",
+      "method": "POST",
+      "url": "{{ base_url }}/pedidos/{{ pedido_id }}/pagar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"metodoPagamento\": \"CARTAO_CREDITO\",\n  \"numeroParcelas\": 3\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_cancelar_pedido_cliente",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "Cancelar Pedido (Cliente)",
+      "method": "POST",
+      "url": "{{ base_url }}/pedidos/{{ pedido_id }}/cancelar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"motivo\": \"Desisti da compra\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" }
+      ]
+    },
+    {
+      "_id": "req_sse_stream",
+      "_type": "request",
+      "parentId": "fld_pedidos_cliente",
+      "name": "SSE — Stream de Eventos de Pedidos",
+      "method": "GET",
+      "url": "{{ base_url }}/pedidos/stream",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_cliente }}" },
+        { "name": "Accept", "value": "text/event-stream" }
+      ]
+    },
+
+    {
+      "_id": "fld_admin_pedidos",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "👑 Admin — Pedidos"
+    },
+    {
+      "_id": "req_admin_listar_pedidos",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Todos os Pedidos",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_listar_por_status_criado",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Pedidos por Status — CRIADO",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/status/CRIADO",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_listar_por_status_pago",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Pedidos por Status — PAGO",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/status/PAGO",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_listar_por_status_enviado",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Pedidos por Status — ENVIADO",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/status/ENVIADO",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_listar_por_status_entregue",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Pedidos por Status — ENTREGUE",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/status/ENTREGUE",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_listar_por_status_cancelado",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Listar Pedidos por Status — CANCELADO",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/status/CANCELADO",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_buscar_pedido",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Buscar Pedido por ID",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/pedidos/{{ pedido_id }}",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_pagar_pedido",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Marcar como Pago",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/pedidos/{{ pedido_id }}/pagar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"metodoPagamento\": \"BOLETO\",\n  \"numeroParcelas\": 1\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_enviar_pedido",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Marcar como Enviado",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/pedidos/{{ pedido_id }}/enviar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"codigoRastreio\": \"BR123456789XX\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_entregar_pedido",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Marcar como Entregue",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/pedidos/{{ pedido_id }}/entregar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_admin_cancelar_pedido",
+      "_type": "request",
+      "parentId": "fld_admin_pedidos",
+      "name": "Cancelar Pedido",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/pedidos/{{ pedido_id }}/cancelar",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"motivo\": \"Fraude detectada pelo sistema\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+
+    {
+      "_id": "fld_dlq",
+      "_type": "request_group",
+      "parentId": "wrk_minhavenda",
+      "name": "☠️ Admin — DLQ (Dead Letter Queue)"
+    },
+    {
+      "_id": "req_listar_dlqs",
+      "_type": "request",
+      "parentId": "fld_dlq",
+      "name": "Listar DLQs Disponíveis",
+      "method": "GET",
+      "url": "{{ base_url }}/admin/dlq/queues",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_requeue_dlq",
+      "_type": "request",
+      "parentId": "fld_dlq",
+      "name": "Reprocessar DLQ Específica",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/dlq/requeue/pedido.criado.dlq",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    },
+    {
+      "_id": "req_requeue_all_dlq",
+      "_type": "request",
+      "parentId": "fld_dlq",
+      "name": "Reprocessar Todas as DLQs",
+      "method": "POST",
+      "url": "{{ base_url }}/admin/dlq/requeue-all",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ token_admin }}" }
+      ]
+    }
+  ]
+}
