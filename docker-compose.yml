@@ -1,0 +1,62 @@
+# docker-compose.yml — MinhaVenda NestJS
+# Infrastructure only — does NOT run the app container
+# Start with: docker compose up -d postgres rabbitmq mailhog
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: minhavenda-nestjs-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-minhavenda}
+      POSTGRES_USER: ${DB_USERNAME:-minhavenda}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}         # Required — set in .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-minhavenda}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: minhavenda-nestjs-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: minhavenda
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-minhavenda}
+    ports:
+      - "5672:5672"
+      - "15672:15672"     # Management UI: http://localhost:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: minhavenda-nestjs-mailhog
+    ports:
+      - "1025:1025"       # SMTP
+      - "8025:8025"       # Web UI: http://localhost:8025
+    networks:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  backend:
+    driver: bridge
