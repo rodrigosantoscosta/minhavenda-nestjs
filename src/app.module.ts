@@ -14,6 +14,7 @@ import { CarrinhoModule } from './carrinho.module';
 import { PedidoModule } from './pedido.module';
 import { MessagingModule } from './messaging.module';
 import { RabbitMQModule } from './rabbitmq.module';
+import { AdminModule } from './admin.module';
 import { validateEnv } from '@infra/config/env.validation';
 
 @Module({
@@ -57,6 +58,9 @@ import { validateEnv } from '@infra/config/env.validation';
     EstoqueModule,
     CarrinhoModule,
     PedidoModule,
+
+    // ── Admin dashboard ───────────────────────────────────────────────────────
+    AdminModule,
 
     // ── Messaging: email, notifications, RabbitMQ bridge ─────────────────────
     MessagingModule,
