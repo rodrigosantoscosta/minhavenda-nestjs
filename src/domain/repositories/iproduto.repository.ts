@@ -4,11 +4,23 @@ import { ResourceNotFoundException } from '../exceptions/resource-not-found.exce
 export const IPRODUTO_REPOSITORY = Symbol('IProdutoRepository');
 
 export interface FiltrosProduto {
+  termo?: string;
   nome?: string;
   categoriaId?: number;
   precoMin?: number;
   precoMax?: number;
   ativo?: boolean;
+}
+
+export interface FiltrosPaginados extends FiltrosProduto {
+  page: number;
+  size: number;
+  sort?: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  totalElements: number;
 }
 
 export interface IProdutoRepository {
@@ -17,6 +29,8 @@ export interface IProdutoRepository {
   findByIdOrThrow(id: string): Promise<Produto>;
 
   findAll(filtros?: FiltrosProduto): Promise<Produto[]>;
+
+  findAllPaginated(filtros: FiltrosPaginados): Promise<PaginatedResult<Produto>>;
 
   save(produto: Produto): Promise<Produto>;
 

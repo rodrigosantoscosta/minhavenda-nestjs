@@ -10,6 +10,7 @@ const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findAll: jest.fn(),
   save: jest.fn(),
   deleteById: jest.fn(),
+  findAllPaginated: jest.fn(),
 });
 
 function makeCategoria(): Categoria {
@@ -95,6 +96,38 @@ describe('ListarProdutosQuery', () => {
     expect(result[0].categoriaNome).toBe('Eletrônicos');
     expect(result[1].categoriaId).toBeNull();
     expect(result[1].categoriaNome).toBeNull();
+  });
+
+  it('returns a PageDto when page and size are provided', async () => {
+    const cat = makeCategoria();
+    const produtos = [makeProduto('uuid-1', 'Notebook', cat)];
+    repo.findAllPaginated.mockResolvedValue({
+      items: produtos,
+      totalElements: 1,
+    });
+
+    const result = await query.executar({ page: 0, size: 10 });
+
+    expect(repo.findAllPaginated).toHaveBeenCalledWith({ page: 0, size: 10 });
+    expect('content' in result).toBe(true);
+    if ('content' in result) {
+      expect(result.content).toHaveLength(1);
+      expect(result.totalElements).toBe(1);
+      expect(result.page).toBe(0);
+      expect(result.size).toBe(10);
+      expect(result.hasNext).toBe(false);
+      expect(result.hasPrevious).toBe(false);
+    }
+  });
+
+  it('returns a flat array when page and size are absent', async () => {
+    repo.findAll.mockResolvedValue([]);
+
+    const result = await query.executar({ nome: 'Notebook' });
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(repo.findAll).toHaveBeenCalled();
+    expect(repo.findAllPaginated).not.toHaveBeenCalled();
   });
 
   it('maps preco.valor correctly to a plain number', async () => {

@@ -31,6 +31,7 @@ import { CriarProdutoDto } from '@app/dtos/produto/criar-produto.dto';
 import { AtualizarProdutoDto } from '@app/dtos/produto/atualizar-produto.dto';
 import { FiltroProdutoDto } from '@app/dtos/produto/filtro-produto.dto';
 import { ProdutoDto } from '@app/dtos/produto/produto.dto';
+import { PageDto } from '@app/dtos/common/page.dto';
 
 @ApiTags('Produtos')
 @Controller('produtos')
@@ -45,13 +46,22 @@ export class ProdutoController {
 
   /**
    * GET /api/produtos
-   * Public. Accepts optional query params: nome, categoriaId, precoMin, precoMax, ativo.
-   * Defaults to ativo=true when ativo is not provided.
+   * Public. Optional query params: termo, nome, categoriaId, precoMin, precoMax, ativo.
+   * When `page` + `size` are provided returns a PageDto envelope; otherwise returns a flat array.
    */
   @Get()
   @ApiOperation({ summary: 'Listar produtos com filtros opcionais (público)' })
-  @ApiResponse({ status: 200, type: [ProdutoDto] })
-  listar(@Query() filtros: FiltroProdutoDto): Promise<ProdutoDto[]> {
+  @ApiResponse({ status: 200, description: 'Lista ou página de produtos' })
+  listar(
+    @Query() filtros: FiltroProdutoDto,
+  ): Promise<ProdutoDto[] | PageDto<ProdutoDto>> {
+    if (filtros.page !== undefined && filtros.size !== undefined) {
+      return this.listarProdutosQuery.executar({
+        ...filtros,
+        page: filtros.page,
+        size: filtros.size,
+      });
+    }
     return this.listarProdutosQuery.executar(filtros);
   }
 
