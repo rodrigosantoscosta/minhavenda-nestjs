@@ -12,6 +12,7 @@ jest.mock('bcryptjs', () => ({
 }));
 
 const makeRepo = (): jest.Mocked<IUsuarioRepository> => ({
+  findAll: jest.fn(),
   findById: jest.fn(),
   findByIdOrThrow: jest.fn(),
   findByEmail: jest.fn(),

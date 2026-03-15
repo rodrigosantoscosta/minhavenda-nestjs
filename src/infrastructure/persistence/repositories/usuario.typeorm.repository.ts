@@ -39,6 +39,10 @@ export class UsuarioTypeOrmRepository implements IUsuarioRepository {
     return count > 0;
   }
 
+  async findAll(): Promise<Usuario[]> {
+    return this.repo.find();
+  }
+
   async save(usuario: Usuario): Promise<Usuario> {
     return this.repo.save(usuario);
   }

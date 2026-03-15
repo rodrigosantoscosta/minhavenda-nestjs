@@ -10,6 +10,7 @@ const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findAll: jest.fn(),
   save: jest.fn(),
   deleteById: jest.fn(),
+  findAllPaginated: jest.fn(),
 });
 
 function makeProduto(id = 'uuid-prod-1'): Produto {

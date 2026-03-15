@@ -36,6 +36,10 @@ export class EstoqueTypeOrmRepository implements IEstoqueRepository {
     return assertEstoqueProdutoFound(estoque, produtoId);
   }
 
+  async findAll(): Promise<Estoque[]> {
+    return this.repo.find({ relations: ['produto'] });
+  }
+
   async save(estoque: Estoque): Promise<Estoque> {
     const saved = await this.repo.save(estoque);
     // Reload with relations to guarantee a fully populated entity is returned

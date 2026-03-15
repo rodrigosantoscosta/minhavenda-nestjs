@@ -6,6 +6,7 @@ import { Produto } from '@domain/entities/produto.entity';
 import { Money } from '@domain/value-objects/money.value-object';
 
 const makeRepo = (): jest.Mocked<IEstoqueRepository> => ({
+  findAll: jest.fn(),
   findById: jest.fn(),
   findByIdOrThrow: jest.fn(),
   findByProdutoId: jest.fn(),

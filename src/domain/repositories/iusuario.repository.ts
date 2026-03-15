@@ -4,6 +4,8 @@ import { ResourceNotFoundException } from '../exceptions/resource-not-found.exce
 export const IUSUARIO_REPOSITORY = Symbol('IUsuarioRepository');
 
 export interface IUsuarioRepository {
+  findAll(): Promise<Usuario[]>;
+
   findById(id: string): Promise<Usuario | null>;
 
   findByIdOrThrow(id: string): Promise<Usuario>;

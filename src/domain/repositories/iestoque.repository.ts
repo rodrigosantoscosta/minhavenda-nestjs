@@ -4,6 +4,8 @@ import { ResourceNotFoundException } from '../exceptions/resource-not-found.exce
 export const IESTOQUE_REPOSITORY = Symbol('IEstoqueRepository');
 
 export interface IEstoqueRepository {
+  findAll(): Promise<Estoque[]>;
+
   findById(id: number): Promise<Estoque | null>;
 
   findByIdOrThrow(id: number): Promise<Estoque>;

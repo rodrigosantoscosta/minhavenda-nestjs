@@ -13,6 +13,7 @@ const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findAll: jest.fn(),
   save: jest.fn(),
   deleteById: jest.fn(),
+  findAllPaginated: jest.fn(),
 });
 
 const makeCatRepo = (): jest.Mocked<ICategoriaRepository> => ({
@@ -24,6 +25,7 @@ const makeCatRepo = (): jest.Mocked<ICategoriaRepository> => ({
 });
 
 const makeEstoqueRepo = (): jest.Mocked<IEstoqueRepository> => ({
+  findAll: jest.fn(),
   findById: jest.fn(),
   findByIdOrThrow: jest.fn(),
   findByProdutoId: jest.fn(),

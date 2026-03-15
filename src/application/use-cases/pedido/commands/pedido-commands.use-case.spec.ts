@@ -117,6 +117,7 @@ const makeCarrinhoRepo = (): jest.Mocked<ICarrinhoRepository> => ({
 });
 
 const makeEstoqueRepo = (): jest.Mocked<IEstoqueRepository> => ({
+  findAll: jest.fn(),
   findById: jest.fn(),
   findByIdOrThrow: jest.fn(),
   findByProdutoId: jest.fn(),
