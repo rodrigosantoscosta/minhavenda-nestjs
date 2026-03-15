@@ -1,8 +1,13 @@
 # docker-compose.yml — MinhaVenda NestJS
-# Infrastructure only — does NOT run the app container
-# Start with: docker compose up -d postgres rabbitmq mailhog
+#
+# Usage:
+#   docker compose up -d                              # start everything (infra + app)
+#   docker compose up -d --build                      # rebuild app image and start
+#   docker compose up -d postgres rabbitmq mailhog    # infra only
 
 services:
+  # ─── Infrastructure ─────────────────────────────────────────────────────────
+
   postgres:
     image: postgres:16-alpine
     container_name: minhavenda-nestjs-postgres
@@ -52,6 +57,43 @@ services:
     networks:
       - backend
     restart: unless-stopped
+
+  # ─── Application ─────────────────────────────────────────────────────────────
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: minhavenda-nestjs:latest
+    container_name: minhavenda-nestjs-app
+    env_file:
+      - .env
+    environment:
+      # Override host-based defaults so the app reaches sibling containers
+      DB_HOST: postgres
+      DB_PORT: 5432
+      RABBITMQ_URL: amqp://minhavenda:${RABBITMQ_PASS:-minhavenda}@rabbitmq:5672
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+    ports:
+      - "${PORT:-3000}:3000"
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
 
 volumes:
   postgres_data:

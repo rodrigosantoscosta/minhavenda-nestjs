@@ -1,0 +1,42 @@
+# .dockerignore — MinhaVenda NestJS
+
+# Dependencies
+node_modules/
+
+# Build output (rebuilt inside Docker)
+dist/
+coverage/
+
+# Environment files — never bake secrets into the image
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Editor / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+test/
+**/*.spec.ts
+**/*.e2e-spec.ts
+
+# Docker files themselves (not needed inside image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Serena / tooling docs
+SERENA_DOCKER.md
+compose.serena.yml
+serena_config.docker.yml
