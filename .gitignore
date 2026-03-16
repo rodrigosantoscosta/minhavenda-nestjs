@@ -1,9 +1,11 @@
-# compiled output
+# ─── Compiled output ──────────────────────────────────────────────────────────
 /dist
-/node_modules
 /build
 
-# Logs
+# ─── Dependencies ─────────────────────────────────────────────────────────────
+/node_modules
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 logs
 *.log
 npm-debug.log*
@@ -12,14 +14,22 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
-.DS_Store
+# ─── Environment files ────────────────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Tests
+# ─── Test coverage ────────────────────────────────────────────────────────────
 /coverage
 /.nyc_output
 
-# IDEs and editors
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── IDEs and editors ─────────────────────────────────────────────────────────
 /.idea
 .project
 .classpath
@@ -28,39 +38,35 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
+# VSCode — allow shared settings, ignore personal/local overrides
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# temp directory
-.temp
-.tmp
-
-# Runtime data
+# ─── Runtime ──────────────────────────────────────────────────────────────────
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
+# Diagnostic reports
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Serena AI assistant — local config and binary cache only
+# ─── Temp ─────────────────────────────────────────────────────────────────────
+.temp
+.tmp
+
+# ─── TypeScript incremental build cache ───────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Serena AI assistant — local config and binary cache only ─────────────────
 .serena/cache/
 .serena/project.local.yml
 compose.serena.yml
 serena_config.docker.yml
 SERENA_DOCKER.md
 
-# Claude local settings
+# ─── Claude local settings ────────────────────────────────────────────────────
 .claude/
