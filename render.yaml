@@ -1,0 +1,73 @@
+# render.yaml — MinhaVenda NestJS deployment blueprint
+# Docs: https://render.com/docs/blueprint-spec
+#
+# HOW TO USE:
+#   1. Push this file to the root of your repository.
+#   2. In the Render dashboard → New → Blueprint → select your repo.
+#   3. After the initial deploy, fill in the "sync: false" env vars manually
+#      in the Render dashboard (RABBITMQ_URL, MAIL_HOST, CORS_ALLOWED_ORIGINS).
+
+databases:
+  - name: minhavenda-db
+    databaseName: minhavenda
+    user: minhavenda
+    plan: free            # upgrade to 'starter' for production workloads
+    region: oregon        # change to match your preferred region
+
+services:
+  - type: web
+    name: minhavenda-api
+    runtime: node
+    plan: free            # upgrade to 'starter' to avoid cold-start sleeps & SSE timeouts
+    region: oregon
+    # Build: install deps → compile TypeScript → run DB migrations from dist/
+    buildCommand: >-
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm run build &&
+      node ./node_modules/.bin/typeorm migration:run -d dist/infrastructure/persistence/typeorm-data-source.prod.js
+    startCommand: node dist/main
+    envVars:
+      # ── Runtime ──────────────────────────────────────────────────────────────
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+      # ── Database — Render injects DATABASE_URL from the linked database ───────
+      - key: DATABASE_URL
+        fromDatabase:
+          name: minhavenda-db
+          property: connectionString
+
+      # ── JWT ──────────────────────────────────────────────────────────────────
+      - key: JWT_SECRET
+        generateValue: true          # Render generates a cryptographically secure random value
+      - key: JWT_EXPIRATION
+        value: 86400                 # seconds (24 h)
+
+      # ── RabbitMQ — set manually in the Render dashboard (e.g. CloudAMQP) ─────
+      - key: RABBITMQ_URL
+        sync: false
+
+      # ── Email — set manually (e.g. Brevo, Resend, Mailgun) ───────────────────
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_FROM
+        value: noreply@minhavenda.com.br
+      - key: MAIL_FROM_NAME
+        value: MinhaVenda
+
+      # ── CORS — set manually with your frontend URL(s) ────────────────────────
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # ── Swagger — disabled in production ─────────────────────────────────────
+      - key: SWAGGER_ENABLED
+        value: false
+
+      # ── Proxy ────────────────────────────────────────────────────────────────
+      - key: TRUSTED_PROXY_CIDRS
+        value: ""
