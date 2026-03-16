@@ -25,7 +25,7 @@ services:
       npm install -g pnpm &&
       pnpm install --frozen-lockfile &&
       pnpm run build &&
-      node ./node_modules/.bin/typeorm migration:run -d dist/infrastructure/persistence/typeorm-data-source.prod.js
+      node ./node_modules/typeorm/cli.js migration:run -d dist/infrastructure/persistence/typeorm-data-source.prod.js
     startCommand: node dist/main
     envVars:
       # ── Runtime ──────────────────────────────────────────────────────────────
