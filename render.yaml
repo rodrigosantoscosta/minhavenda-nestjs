@@ -5,7 +5,7 @@
 #   1. Push this file to the root of your repository.
 #   2. In the Render dashboard → New → Blueprint → select your repo.
 #   3. After the initial deploy, fill in the "sync: false" env vars manually
-#      in the Render dashboard (RABBITMQ_URL, MAIL_HOST, CORS_ALLOWED_ORIGINS).
+#      in the Render dashboard (RABBITMQ_URL, MAIL_PASSWORD, CORS_ALLOWED_ORIGINS).
 
 databases:
   - name: minhavenda-db
@@ -50,15 +50,17 @@ services:
       - key: RABBITMQ_URL
         sync: false
 
-      # ── Email — set manually (e.g. Brevo, Resend, Mailgun) ───────────────────
+      # ── Email (Resend SMTP — smtp.resend.com:587) ─────────────────────────────
       - key: MAIL_HOST
-        sync: false
+        value: smtp.resend.com
       - key: MAIL_PORT
         value: 587
       - key: MAIL_FROM
         value: noreply@minhavenda.com.br
       - key: MAIL_FROM_NAME
         value: MinhaVenda
+      - key: MAIL_PASSWORD
+        sync: false                  # set to your Resend API key (re_...)
 
       # ── CORS — set manually with your frontend URL(s) ────────────────────────
       - key: CORS_ALLOWED_ORIGINS

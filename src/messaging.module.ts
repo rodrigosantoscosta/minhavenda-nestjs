@@ -15,23 +15,36 @@ import { AuthModule } from './auth.module';
   imports: [
     TypeOrmModule.forFeature([Notificacao]),
 
-    // MailerModule — configured from env, pointing at Mailhog in dev
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        transport: {
-          host: config.getOrThrow<string>('MAIL_HOST'),
-          port: config.getOrThrow<number>('MAIL_PORT'),
-          secure: false,
-          ignoreTLS: true,
-        },
-        defaults: {
-          from: `"${config.getOrThrow<string>('MAIL_FROM_NAME')}" <${config.getOrThrow<string>('MAIL_FROM')}>`,
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const isDev = config.get<string>('NODE_ENV') !== 'production';
+        const password = config.get<string>('MAIL_PASSWORD');
+
+        return {
+          transport: {
+            host: config.getOrThrow<string>('MAIL_HOST'),
+            port: config.getOrThrow<number>('MAIL_PORT'),
+            // Dev (Mailhog): no TLS, no auth
+            // Prod (Resend/SMTP): STARTTLS on 587, auth required
+            secure: false,
+            ignoreTLS: isDev,
+            ...(isDev || !password
+              ? {}
+              : {
+                  auth: {
+                    user: 'resend',   // Resend SMTP user is always "resend"
+                    pass: password,
+                  },
+                }),
+          },
+          defaults: {
+            from: `"${config.getOrThrow<string>('MAIL_FROM_NAME')}" <${config.getOrThrow<string>('MAIL_FROM')}>`,
+          },
+        };
+      },
     }),
 
-    // Provides IUSUARIO_REPOSITORY (needed by PedidoNotificationListener)
     AuthModule,
   ],
   providers: [
@@ -42,7 +55,6 @@ import { AuthModule } from './auth.module';
 
     PedidoEmailService,
 
-    // 3 independent listeners
     PedidoEmailListener,
     PedidoNotificationListener,
     PedidoRabbitMQBridgeListener,
