@@ -20,7 +20,6 @@ services:
     runtime: node
     plan: free            # upgrade to 'starter' to avoid cold-start sleeps & SSE timeouts
     region: oregon
-    # Build: install deps → compile TypeScript → run DB migrations from dist/
     buildCommand: >-
       npm install -g pnpm &&
       pnpm install --frozen-lockfile &&
@@ -34,7 +33,27 @@ services:
       - key: PORT
         value: 3000
 
-      # ── Database — Render injects DATABASE_URL from the linked database ───────
+      # ── Database — individual vars for app + DATABASE_URL for migration CLI ──
+      - key: DB_HOST
+        fromDatabase:
+          name: minhavenda-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: minhavenda-db
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: minhavenda-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: minhavenda-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: minhavenda-db
+          property: database
       - key: DATABASE_URL
         fromDatabase:
           name: minhavenda-db
@@ -42,9 +61,9 @@ services:
 
       # ── JWT ──────────────────────────────────────────────────────────────────
       - key: JWT_SECRET
-        generateValue: true          # Render generates a cryptographically secure random value
+        generateValue: true
       - key: JWT_EXPIRATION
-        value: 86400                 # seconds (24 h)
+        value: 86400
 
       # ── RabbitMQ — set manually in the Render dashboard (e.g. CloudAMQP) ─────
       - key: RABBITMQ_URL
