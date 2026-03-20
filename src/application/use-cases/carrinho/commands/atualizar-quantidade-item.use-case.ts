@@ -57,8 +57,9 @@ export class AtualizarQuantidadeItemUseCase {
     // 5. Recalculate cart totals
     carrinho.calcularValorTotal();
 
-    // 6. Persist with cascade
-    const saved = await this.carrinhoRepo.save(carrinho);
+    // 6. Persist the item row directly (no cascade) then update cart scalars
+    await this.carrinhoRepo.saveItem(item);
+    const saved = await this.carrinhoRepo.updateCarrinhoTotals(carrinho);
     return CarrinhoMapper.toDto(saved);
   }
 }

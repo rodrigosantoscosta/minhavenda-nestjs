@@ -11,6 +11,10 @@ const makeRepo = (): jest.Mocked<ICarrinhoRepository> => ({
   findByIdOrThrow: jest.fn(),
   findAtivoByUsuarioId: jest.fn(),
   save: jest.fn(),
+  updateCarrinhoTotals: jest.fn(),
+  saveItem: jest.fn(),
+  removeItem: jest.fn(),
+  clearItems: jest.fn(),
 });
 
 function makeUsuario(id = 'user-uuid-1'): Usuario {

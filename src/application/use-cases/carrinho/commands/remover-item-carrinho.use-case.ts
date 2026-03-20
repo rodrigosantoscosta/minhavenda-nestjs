@@ -30,12 +30,14 @@ export class RemoverItemCarrinhoUseCase {
       );
     }
 
-    // 3. Remove via domain method — filters the itens array
-    //    TypeORM's orphanedRowAction:'delete' will delete the removed item from DB
+    // 3. DELETE the item row directly — no cascade, no null carrinho_id risk
+    await this.carrinhoRepo.removeItem(itemId);
+
+    // 4. Update in-memory totals
     carrinho.removerItem(itemId);
 
-    // 4. Persist
-    const saved = await this.carrinhoRepo.save(carrinho);
+    // 5. UPDATE only the cart scalar columns — does not touch itens_carrinho
+    const saved = await this.carrinhoRepo.updateCarrinhoTotals(carrinho);
     return CarrinhoMapper.toDto(saved);
   }
 }
