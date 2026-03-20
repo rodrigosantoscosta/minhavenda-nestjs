@@ -21,6 +21,10 @@ const makeCarrinhoRepo = (): jest.Mocked<ICarrinhoRepository> => ({
   findByIdOrThrow: jest.fn(),
   findAtivoByUsuarioId: jest.fn(),
   save: jest.fn(),
+  updateCarrinhoTotals: jest.fn(),
+  saveItem: jest.fn(),
+  removeItem: jest.fn(),
+  clearItems: jest.fn(),
 });
 
 const makeProdutoRepo = (): jest.Mocked<IProdutoRepository> => ({
@@ -184,16 +188,16 @@ describe('AdicionarItemCarrinhoUseCase', () => {
     ];
     cartWithItem.valorTotal = 200;
     cartWithItem.quantidadeTotal = 2;
-    carrinhoRepo.save
-      .mockResolvedValueOnce(emptyCart) // create cart
-      .mockResolvedValueOnce(cartWithItem); // add item
+    carrinhoRepo.save.mockResolvedValueOnce(emptyCart); // create cart
+    carrinhoRepo.saveItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockResolvedValue(cartWithItem);
 
     const result = await useCase.executar('user-1', {
       produtoId: 'prod-1',
       quantidade: 2,
     });
 
-    expect(carrinhoRepo.save).toHaveBeenCalledTimes(2);
+    expect(carrinhoRepo.save).toHaveBeenCalledTimes(1);
     expect(result.itens).toHaveLength(1);
   });
 
@@ -215,7 +219,8 @@ describe('AdicionarItemCarrinhoUseCase', () => {
     estoqueRepo.findByProdutoIdOrThrow.mockResolvedValue(
       makeEstoque('prod-1', 10),
     );
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.saveItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     await useCase.executar('user-1', { produtoId: 'prod-1', quantidade: 2 });
 
@@ -233,7 +238,8 @@ describe('AdicionarItemCarrinhoUseCase', () => {
     estoqueRepo.findByProdutoIdOrThrow.mockResolvedValue(
       makeEstoque('prod-1', 10),
     );
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.saveItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     await useCase.executar('user-1', { produtoId: 'prod-1', quantidade: 3 });
 
@@ -249,7 +255,8 @@ describe('AdicionarItemCarrinhoUseCase', () => {
     estoqueRepo.findByProdutoIdOrThrow.mockResolvedValue(
       makeEstoque('prod-1', 10),
     );
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.saveItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     const result = await useCase.executar('user-1', {
       produtoId: 'prod-1',

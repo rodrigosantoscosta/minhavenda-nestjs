@@ -18,6 +18,10 @@ const makeCarrinhoRepo = (): jest.Mocked<ICarrinhoRepository> => ({
   findByIdOrThrow: jest.fn(),
   findAtivoByUsuarioId: jest.fn(),
   save: jest.fn(),
+  updateCarrinhoTotals: jest.fn(),
+  saveItem: jest.fn(),
+  removeItem: jest.fn(),
+  clearItems: jest.fn(),
 });
 
 // ─── Factories ───────────────────────────────────────────────────────────────
@@ -86,7 +90,8 @@ describe('RemoverItemCarrinhoUseCase', () => {
     await expect(useCase.executar('user-1', 'item-1')).rejects.toBeInstanceOf(
       BusinessException,
     );
-    expect(carrinhoRepo.save).not.toHaveBeenCalled();
+    expect(carrinhoRepo.removeItem).not.toHaveBeenCalled();
+    expect(carrinhoRepo.updateCarrinhoTotals).not.toHaveBeenCalled();
   });
 
   it('throws ResourceNotFoundException when item is not in cart', async () => {
@@ -97,13 +102,15 @@ describe('RemoverItemCarrinhoUseCase', () => {
     await expect(
       useCase.executar('user-1', 'item-nao-existe'),
     ).rejects.toBeInstanceOf(ResourceNotFoundException);
-    expect(carrinhoRepo.save).not.toHaveBeenCalled();
+    expect(carrinhoRepo.removeItem).not.toHaveBeenCalled();
+    expect(carrinhoRepo.updateCarrinhoTotals).not.toHaveBeenCalled();
   });
 
   it('removes the item from the cart via domain method', async () => {
     const carrinho = makeCarrinhoComItem('item-1');
     carrinhoRepo.findAtivoByUsuarioId.mockResolvedValue(carrinho);
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.removeItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     await useCase.executar('user-1', 'item-1');
 
@@ -113,7 +120,8 @@ describe('RemoverItemCarrinhoUseCase', () => {
   it('recalculates cart totals after removing item', async () => {
     const carrinho = makeCarrinhoComItem('item-1');
     carrinhoRepo.findAtivoByUsuarioId.mockResolvedValue(carrinho);
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.removeItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     await useCase.executar('user-1', 'item-1');
 
@@ -124,11 +132,13 @@ describe('RemoverItemCarrinhoUseCase', () => {
   it('saves the cart and returns a CarrinhoDto', async () => {
     const carrinho = makeCarrinhoComItem('item-1');
     carrinhoRepo.findAtivoByUsuarioId.mockResolvedValue(carrinho);
-    carrinhoRepo.save.mockImplementation(async (c) => c);
+    carrinhoRepo.removeItem.mockResolvedValue(undefined);
+    carrinhoRepo.updateCarrinhoTotals.mockImplementation(async (c) => c);
 
     const result = await useCase.executar('user-1', 'item-1');
 
-    expect(carrinhoRepo.save).toHaveBeenCalledTimes(1);
+    expect(carrinhoRepo.removeItem).toHaveBeenCalledWith('item-1');
+    expect(carrinhoRepo.updateCarrinhoTotals).toHaveBeenCalledTimes(1);
     expect(result.id).toBe('cart-1');
     expect(result.itens).toHaveLength(0);
   });

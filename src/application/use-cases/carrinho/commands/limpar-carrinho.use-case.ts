@@ -21,12 +21,15 @@ export class LimparCarrinhoUseCase {
       throw new BusinessException('Carrinho ativo não encontrado');
     }
 
-    // 2. Clear all items — orphanedRowAction:'delete' will remove them from DB
+    // 2. DELETE all item rows directly — no orphanedRowAction cascade needed
+    await this.carrinhoRepo.clearItems(carrinho.id);
+
+    // 3. Reset in-memory totals
     carrinho.itens = [];
     carrinho.calcularValorTotal();
 
-    // 3. Persist
-    const saved = await this.carrinhoRepo.save(carrinho);
+    // 4. UPDATE only the cart scalar columns
+    const saved = await this.carrinhoRepo.updateCarrinhoTotals(carrinho);
     return CarrinhoMapper.toDto(saved);
   }
 }

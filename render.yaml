@@ -1,0 +1,94 @@
+# render.yaml — MinhaVenda NestJS deployment blueprint
+# Docs: https://render.com/docs/blueprint-spec
+#
+# HOW TO USE:
+#   1. Push this file to the root of your repository.
+#   2. In the Render dashboard → New → Blueprint → select your repo.
+#   3. After the initial deploy, fill in the "sync: false" env vars manually
+#      in the Render dashboard (RABBITMQ_URL, MAIL_PASSWORD).
+
+databases:
+  - name: minhavenda-db
+    databaseName: minhavenda
+    user: minhavenda
+    plan: free            # upgrade to 'starter' for production workloads
+    region: oregon        # change to match your preferred region
+
+services:
+  - type: web
+    name: minhavenda-api
+    runtime: node
+    plan: free            # upgrade to 'starter' to avoid cold-start sleeps & SSE timeouts
+    region: oregon
+    buildCommand: >-
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm run build &&
+      pnpm run migration:run:prod
+    startCommand: node dist/main
+    envVars:
+      # ── Runtime ──────────────────────────────────────────────────────────────
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+      # ── Database — individual vars for app + DATABASE_URL for migration CLI ──
+      - key: DB_HOST
+        fromDatabase:
+          name: minhavenda-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: minhavenda-db
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: minhavenda-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: minhavenda-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: minhavenda-db
+          property: database
+      - key: DATABASE_URL
+        fromDatabase:
+          name: minhavenda-db
+          property: connectionString
+
+      # ── JWT ──────────────────────────────────────────────────────────────────
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 86400
+
+      # ── RabbitMQ — set manually in the Render dashboard (e.g. CloudAMQP) ─────
+      - key: RABBITMQ_URL
+        sync: false
+
+      # ── Email (Resend SMTP — smtp.resend.com:587) ─────────────────────────────
+      - key: MAIL_HOST
+        value: smtp.resend.com
+      - key: MAIL_PORT
+        value: 587
+      - key: MAIL_FROM
+        value: noreply@minhavenda.com.br
+      - key: MAIL_FROM_NAME
+        value: MinhaVenda
+      - key: MAIL_PASSWORD
+        sync: false                  # set to your Resend API key (re_...)
+
+      # ── CORS ─────────────────────────────────────────────────────────────────
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://minhavenda-frontend.vercel.app
+
+      # ── Swagger — disabled in production ─────────────────────────────────────
+      - key: SWAGGER_ENABLED
+        value: false
+
+      # ── Proxy ────────────────────────────────────────────────────────────────
+      - key: TRUSTED_PROXY_CIDRS
+        value: ""

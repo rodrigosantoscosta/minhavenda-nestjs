@@ -29,6 +29,7 @@ import { validateEnv } from '@infra/config/env.validation';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const isProd = configService.get<string>('NODE_ENV') === 'production';
         return {
           type: 'postgres' as const,
           host: configService.getOrThrow<string>('DB_HOST'),
@@ -36,6 +37,8 @@ import { validateEnv } from '@infra/config/env.validation';
           username: configService.getOrThrow<string>('DB_USERNAME'),
           password: configService.getOrThrow<string>('DB_PASSWORD'),
           database: configService.getOrThrow<string>('DB_NAME'),
+          // Render managed Postgres requires SSL; disabled in local dev
+          ssl: isProd ? { rejectUnauthorized: false } : false,
           synchronize: false,
           migrationsRun: true,
           autoLoadEntities: true,
