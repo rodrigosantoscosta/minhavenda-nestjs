@@ -61,7 +61,7 @@ export class AdicionarItemCarrinhoUseCase {
       );
     }
 
-    // 4. Add item via domain method — merges into existing or pushes new
+    // 4. Add/merge via domain method
     const novoItem = new ItemCarrinho({
       id: randomUUID(),
       carrinho,
@@ -73,8 +73,16 @@ export class AdicionarItemCarrinhoUseCase {
 
     carrinho.adicionarItem(novoItem);
 
-    // 5. Persist — cascade saves/updates items
-    const saved = await this.carrinhoRepo.save(carrinho);
+    // 5. Persist:
+    //    - If the item already existed, adicionarItem mutated it in-place — use saveItem.
+    //    - If it's a new item, saveItem performs an INSERT.
+    //    - Either way, never cascade through the full cart to avoid null carrinho_id risk.
+    const itemPersistido = itemExistente
+      ? carrinho.itens.find((i) => i.produto.id === dto.produtoId)!
+      : carrinho.itens[carrinho.itens.length - 1];
+
+    await this.carrinhoRepo.saveItem(itemPersistido);
+    const saved = await this.carrinhoRepo.updateCarrinhoTotals(carrinho);
     return CarrinhoMapper.toDto(saved);
   }
 
@@ -96,6 +104,7 @@ export class AdicionarItemCarrinhoUseCase {
       dataAtualizacao: new Date(),
     });
 
+    // Full save is safe here — no items exist yet, no cascade risk
     return this.carrinhoRepo.save(novoCarrinho);
   }
 }
