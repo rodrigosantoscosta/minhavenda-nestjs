@@ -5,6 +5,8 @@ import { ResourceNotFoundException } from '@domain/exceptions/resource-not-found
 import { Produto } from '@domain/entities/produto.entity';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { Money } from '@domain/value-objects/money.value-object';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findById: jest.fn(),
@@ -23,34 +25,25 @@ const makeCatRepo = (): jest.Mocked<ICategoriaRepository> => ({
   deleteById: jest.fn(),
 });
 
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn().mockResolvedValue(undefined), delByPrefix: jest.fn().mockResolvedValue(undefined) } as unknown as jest.Mocked<AppCacheService>);
+
 function makeProduto(): Produto {
-  const cat = new Categoria({
-    id: 1,
-    nome: 'Eletrônicos',
-    descricao: 'd',
-    ativo: true,
-    dataCadastro: new Date(),
-  });
-  return new Produto({
-    id: 'uuid-prod-1',
-    nome: 'Notebook',
-    descricao: 'desc original',
-    preco: Money.of(3000),
-    categoria: cat,
-    ativo: true,
-    dataCadastro: new Date(),
-  });
+  const cat = new Categoria({ id: 1, nome: 'Eletrônicos', descricao: 'd', ativo: true, dataCadastro: new Date() });
+  return new Produto({ id: 'uuid-prod-1', nome: 'Notebook', descricao: 'desc original', preco: Money.of(3000), categoria: cat, ativo: true, dataCadastro: new Date() });
 }
 
 describe('AtualizarProdutoUseCase', () => {
   let useCase: AtualizarProdutoUseCase;
   let repo: jest.Mocked<IProdutoRepository>;
   let catRepo: jest.Mocked<ICategoriaRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
     catRepo = makeCatRepo();
-    useCase = new AtualizarProdutoUseCase(repo, catRepo);
+    cache = makeCache();
+    useCase = new AtualizarProdutoUseCase(repo, catRepo, cache);
   });
 
   it('throws ResourceNotFoundException when produto does not exist', async () => {
@@ -58,9 +51,9 @@ describe('AtualizarProdutoUseCase', () => {
       new ResourceNotFoundException('não encontrado'),
     );
 
-    await expect(
-      useCase.executar('unknown', { nome: 'X' }),
-    ).rejects.toBeInstanceOf(ResourceNotFoundException);
+    await expect(useCase.executar('unknown', { nome: 'X' })).rejects.toBeInstanceOf(
+      ResourceNotFoundException,
+    );
     expect(repo.save).not.toHaveBeenCalled();
   });
 
@@ -68,9 +61,7 @@ describe('AtualizarProdutoUseCase', () => {
     repo.findByIdOrThrow.mockResolvedValue(makeProduto());
     repo.save.mockImplementation(async (p) => p);
 
-    const result = await useCase.executar('uuid-prod-1', {
-      nome: '  Notebook Pro  ',
-    });
+    await useCase.executar('uuid-prod-1', { nome: '  Notebook Pro  ' });
 
     const saved = repo.save.mock.calls[0][0];
     expect(saved.nome).toBe('Notebook Pro');
@@ -98,13 +89,7 @@ describe('AtualizarProdutoUseCase', () => {
   });
 
   it('loads and assigns new categoria when categoriaId is provided', async () => {
-    const novaCat = new Categoria({
-      id: 2,
-      nome: 'Livros',
-      descricao: 'd',
-      ativo: true,
-      dataCadastro: new Date(),
-    });
+    const novaCat = new Categoria({ id: 2, nome: 'Livros', descricao: 'd', ativo: true, dataCadastro: new Date() });
     repo.findByIdOrThrow.mockResolvedValue(makeProduto());
     catRepo.findByIdOrThrow.mockResolvedValue(novaCat);
     repo.save.mockImplementation(async (p) => p);
@@ -121,9 +106,9 @@ describe('AtualizarProdutoUseCase', () => {
       new ResourceNotFoundException('Categoria não encontrada'),
     );
 
-    await expect(
-      useCase.executar('uuid-prod-1', { categoriaId: 99 }),
-    ).rejects.toBeInstanceOf(ResourceNotFoundException);
+    await expect(useCase.executar('uuid-prod-1', { categoriaId: 99 })).rejects.toBeInstanceOf(
+      ResourceNotFoundException,
+    );
   });
 
   it('performs partial update — ignores undefined fields', async () => {
@@ -131,12 +116,29 @@ describe('AtualizarProdutoUseCase', () => {
     repo.findByIdOrThrow.mockResolvedValue(original);
     repo.save.mockImplementation(async (p) => p);
 
-    // Only update ativo — nothing else should change
     await useCase.executar('uuid-prod-1', { ativo: false });
 
     const saved = repo.save.mock.calls[0][0];
     expect(saved.nome).toBe('Notebook');
     expect(saved.descricao).toBe('desc original');
     expect(saved.ativo).toBe(false);
+  });
+
+  it('busts PRODUTO_BY_ID and produtos:lista: cache after update', async () => {
+    repo.findByIdOrThrow.mockResolvedValue(makeProduto());
+    repo.save.mockImplementation(async (p) => p);
+
+    await useCase.executar('uuid-prod-1', { ativo: false });
+
+    expect(cache.del).toHaveBeenCalledWith(CACHE_KEYS.PRODUTO_BY_ID('uuid-prod-1'));
+    expect(cache.delByPrefix).toHaveBeenCalledWith('produtos:lista:');
+  });
+
+  it('does not bust cache when produto is not found', async () => {
+    repo.findByIdOrThrow.mockRejectedValue(new ResourceNotFoundException('x'));
+
+    await expect(useCase.executar('uuid-prod-1', {})).rejects.toBeInstanceOf(ResourceNotFoundException);
+    expect(cache.del).not.toHaveBeenCalled();
+    expect(cache.delByPrefix).not.toHaveBeenCalled();
   });
 });

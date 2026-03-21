@@ -18,6 +18,7 @@ import { Money } from '@domain/value-objects/money.value-object';
 import { CriarProdutoDto } from '@app/dtos/produto/criar-produto.dto';
 import { ProdutoDto } from '@app/dtos/produto/produto.dto';
 import { ProdutoMapper } from '@app/mappers/produto.mapper';
+import { AppCacheService } from '@infra/cache/cache.service';
 
 @Injectable()
 export class CriarProdutoUseCase {
@@ -28,6 +29,7 @@ export class CriarProdutoUseCase {
     private readonly categoriaRepo: ICategoriaRepository,
     @Inject(IESTOQUE_REPOSITORY)
     private readonly estoqueRepo: IEstoqueRepository,
+    private readonly cacheService: AppCacheService,
   ) {}
 
   async executar(dto: CriarProdutoDto): Promise<ProdutoDto> {
@@ -60,6 +62,9 @@ export class CriarProdutoUseCase {
       atualizadoEm: new Date(),
     });
     await this.estoqueRepo.save(estoque);
+
+    // Bust the produtos listing cache — new product must appear immediately
+    await this.cacheService.delByPrefix('produtos:lista:');
 
     return ProdutoMapper.toDto(saved);
   }

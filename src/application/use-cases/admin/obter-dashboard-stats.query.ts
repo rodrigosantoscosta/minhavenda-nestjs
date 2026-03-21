@@ -17,6 +17,8 @@ import {
 } from '@domain/repositories/iestoque.repository';
 import { StatusPedido } from '@domain/enums/status-pedido.enum';
 import { DashboardStatsDto, EstoqueBaixoItem } from '@app/dtos/admin/dashboard-stats.dto';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS, CACHE_TTL } from '@infra/cache/cache-keys.constant';
 
 const ESTOQUE_BAIXO_LIMITE = 5;
 const STATUS_RECEITA = new Set([StatusPedido.PAGO, StatusPedido.ENVIADO, StatusPedido.ENTREGUE]);
@@ -28,9 +30,13 @@ export class ObterDashboardStatsQuery {
     @Inject(IPEDIDO_REPOSITORY) private readonly pedidoRepo: IPedidoRepository,
     @Inject(IPRODUTO_REPOSITORY) private readonly produtoRepo: IProdutoRepository,
     @Inject(IESTOQUE_REPOSITORY) private readonly estoqueRepo: IEstoqueRepository,
+    private readonly cacheService: AppCacheService,
   ) {}
 
   async executar(): Promise<DashboardStatsDto> {
+    const cached = await this.cacheService.get<DashboardStatsDto>(CACHE_KEYS.DASHBOARD_STATS);
+    if (cached) return cached;
+
     const [usuarios, pedidos, produtos, estoques] = await Promise.all([
       this.usuarioRepo.findAll(),
       this.pedidoRepo.findAll(),
@@ -68,7 +74,7 @@ export class ObterDashboardStatsQuery {
       .filter((p) => STATUS_RECEITA.has(p.status))
       .reduce((sum, p) => sum + Number(p.valorTotal), 0);
 
-    return {
+    const stats: DashboardStatsDto = {
       pedidosPorStatus,
       totalProdutosAtivos,
       totalProdutosInativos,
@@ -76,5 +82,8 @@ export class ObterDashboardStatsQuery {
       estoqueBaixo,
       receitaTotal,
     };
+
+    await this.cacheService.set(CACHE_KEYS.DASHBOARD_STATS, stats, CACHE_TTL.DASHBOARD);
+    return stats;
   }
 }

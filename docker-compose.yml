@@ -58,6 +58,22 @@ services:
       - backend
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: minhavenda-nestjs-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ─── Application ─────────────────────────────────────────────────────────────
 
   app:
@@ -76,6 +92,8 @@ services:
       RABBITMQ_URL: amqp://minhavenda:${RABBITMQ_PASS:-minhavenda}@rabbitmq:5672
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "${PORT:-3000}:3000"
     networks:
@@ -87,6 +105,8 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
@@ -98,6 +118,7 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  redis_data:
 
 networks:
   backend:

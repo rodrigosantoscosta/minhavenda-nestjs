@@ -1,6 +1,8 @@
 import { ListarCategoriasQuery } from './listar-categorias.query';
 import { ICategoriaRepository } from '@domain/repositories/icategoria.repository';
 import { Categoria } from '@domain/entities/categoria.entity';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   findById: jest.fn(),
@@ -9,6 +11,9 @@ const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   save: jest.fn(),
   deleteById: jest.fn(),
 });
+
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn(), delByPrefix: jest.fn() } as unknown as jest.Mocked<AppCacheService>);
 
 function makeCategoria(id: number, nome: string): Categoria {
   return new Categoria({
@@ -23,10 +28,12 @@ function makeCategoria(id: number, nome: string): Categoria {
 describe('ListarCategoriasQuery', () => {
   let query: ListarCategoriasQuery;
   let repo: jest.Mocked<ICategoriaRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
-    query = new ListarCategoriasQuery(repo);
+    cache = makeCache();
+    query = new ListarCategoriasQuery(repo, cache);
   });
 
   it('returns an empty array when there are no categorias', async () => {
@@ -52,7 +59,6 @@ describe('ListarCategoriasQuery', () => {
 
   it('coerces BIGSERIAL ids to number', async () => {
     const cat = makeCategoria(7, 'Casa');
-    // Simulate PG driver returning id as string
     (cat as unknown as { id: unknown }).id = '7';
     repo.findAll.mockResolvedValue([cat]);
 
@@ -60,5 +66,27 @@ describe('ListarCategoriasQuery', () => {
 
     expect(result[0].id).toBe(7);
     expect(typeof result[0].id).toBe('number');
+  });
+
+  it('returns cached value on cache hit without calling the repo', async () => {
+    const cached = [{ id: 1, nome: 'Cached' }];
+    cache.get.mockResolvedValue(cached);
+
+    const result = await query.executar();
+
+    expect(result).toBe(cached);
+    expect(repo.findAll).not.toHaveBeenCalled();
+  });
+
+  it('stores result in cache on cache miss', async () => {
+    repo.findAll.mockResolvedValue([makeCategoria(1, 'Eletrônicos')]);
+
+    await query.executar();
+
+    expect(cache.set).toHaveBeenCalledWith(
+      CACHE_KEYS.CATEGORIAS_ALL,
+      expect.any(Array),
+      expect.any(Number),
+    );
   });
 });

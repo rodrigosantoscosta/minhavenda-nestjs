@@ -6,6 +6,7 @@ import { ResourceNotFoundException } from '@domain/exceptions/resource-not-found
 import { Produto } from '@domain/entities/produto.entity';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { Money } from '@domain/value-objects/money.value-object';
+import { AppCacheService } from '@infra/cache/cache.service';
 
 const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findById: jest.fn(),
@@ -33,26 +34,15 @@ const makeEstoqueRepo = (): jest.Mocked<IEstoqueRepository> => ({
   save: jest.fn().mockImplementation(async (e) => e),
 });
 
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn().mockResolvedValue(undefined), delByPrefix: jest.fn().mockResolvedValue(undefined) } as unknown as jest.Mocked<AppCacheService>);
+
 function makeCategoria(id: number): Categoria {
-  return new Categoria({
-    id,
-    nome: 'Eletrônicos',
-    descricao: 'desc',
-    ativo: true,
-    dataCadastro: new Date(),
-  });
+  return new Categoria({ id, nome: 'Eletrônicos', descricao: 'desc', ativo: true, dataCadastro: new Date() });
 }
 
 function makeProduto(): Produto {
-  return new Produto({
-    id: 'uuid-prod-1',
-    nome: 'Smartphone',
-    descricao: 'desc',
-    preco: Money.of(999.9),
-    categoria: null,
-    ativo: true,
-    dataCadastro: new Date(),
-  });
+  return new Produto({ id: 'uuid-prod-1', nome: 'Smartphone', descricao: 'desc', preco: Money.of(999.9), categoria: null, ativo: true, dataCadastro: new Date() });
 }
 
 describe('CriarProdutoUseCase', () => {
@@ -60,12 +50,14 @@ describe('CriarProdutoUseCase', () => {
   let repo: jest.Mocked<IProdutoRepository>;
   let catRepo: jest.Mocked<ICategoriaRepository>;
   let estoqueRepo: jest.Mocked<IEstoqueRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
     catRepo = makeCatRepo();
     estoqueRepo = makeEstoqueRepo();
-    useCase = new CriarProdutoUseCase(repo, catRepo, estoqueRepo);
+    cache = makeCache();
+    useCase = new CriarProdutoUseCase(repo, catRepo, estoqueRepo, cache);
   });
 
   const dto = {
@@ -101,8 +93,7 @@ describe('CriarProdutoUseCase', () => {
   it('loads and assigns categoria when categoriaId is provided', async () => {
     const cat = makeCategoria(1);
     catRepo.findByIdOrThrow.mockResolvedValue(cat);
-    const saved = makeProduto();
-    repo.save.mockResolvedValue(saved);
+    repo.save.mockResolvedValue(makeProduto());
 
     await useCase.executar(dto);
 
@@ -144,12 +135,29 @@ describe('CriarProdutoUseCase', () => {
 
   it('returns a ProdutoDto with correct preco as number', async () => {
     catRepo.findByIdOrThrow.mockResolvedValue(makeCategoria(1));
-    const saved = makeProduto();
-    repo.save.mockResolvedValue(saved);
+    repo.save.mockResolvedValue(makeProduto());
 
     const result = await useCase.executar(dto);
 
     expect(typeof result.preco).toBe('number');
     expect(result.id).toBe('uuid-prod-1');
+  });
+
+  it('busts produtos:lista: cache prefix after saving', async () => {
+    catRepo.findByIdOrThrow.mockResolvedValue(makeCategoria(1));
+    repo.save.mockResolvedValue(makeProduto());
+
+    await useCase.executar(dto);
+
+    expect(cache.delByPrefix).toHaveBeenCalledWith('produtos:lista:');
+  });
+
+  it('does not bust cache when save is never reached (categoria not found)', async () => {
+    catRepo.findByIdOrThrow.mockRejectedValue(
+      new ResourceNotFoundException('Categoria não encontrada'),
+    );
+
+    await expect(useCase.executar(dto)).rejects.toBeInstanceOf(ResourceNotFoundException);
+    expect(cache.delByPrefix).not.toHaveBeenCalled();
   });
 });

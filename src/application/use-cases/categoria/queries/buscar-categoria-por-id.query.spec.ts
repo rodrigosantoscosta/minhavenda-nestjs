@@ -2,6 +2,8 @@ import { BuscarCategoriaPorIdQuery } from './buscar-categoria-por-id.query';
 import { ICategoriaRepository } from '@domain/repositories/icategoria.repository';
 import { ResourceNotFoundException } from '@domain/exceptions/resource-not-found.exception';
 import { Categoria } from '@domain/entities/categoria.entity';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   findById: jest.fn(),
@@ -11,13 +13,18 @@ const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   deleteById: jest.fn(),
 });
 
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn(), delByPrefix: jest.fn() } as unknown as jest.Mocked<AppCacheService>);
+
 describe('BuscarCategoriaPorIdQuery', () => {
   let query: BuscarCategoriaPorIdQuery;
   let repo: jest.Mocked<ICategoriaRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
-    query = new BuscarCategoriaPorIdQuery(repo);
+    cache = makeCache();
+    query = new BuscarCategoriaPorIdQuery(repo, cache);
   });
 
   it('throws ResourceNotFoundException when categoria does not exist', async () => {
@@ -66,5 +73,29 @@ describe('BuscarCategoriaPorIdQuery', () => {
 
     expect(typeof result.id).toBe('number');
     expect(result.id).toBe(2);
+  });
+
+  it('returns cached value on cache hit without calling the repo', async () => {
+    const cached = { id: 4, nome: 'Cached' };
+    cache.get.mockResolvedValue(cached);
+
+    const result = await query.executar(4);
+
+    expect(result).toBe(cached);
+    expect(repo.findByIdOrThrow).not.toHaveBeenCalled();
+  });
+
+  it('stores result in cache on cache miss', async () => {
+    repo.findByIdOrThrow.mockResolvedValue(
+      new Categoria({ id: 4, nome: 'Livros', descricao: 'desc', ativo: true, dataCadastro: new Date() }),
+    );
+
+    await query.executar(4);
+
+    expect(cache.set).toHaveBeenCalledWith(
+      CACHE_KEYS.CATEGORIA_BY_ID(4),
+      expect.any(Object),
+      expect.any(Number),
+    );
   });
 });

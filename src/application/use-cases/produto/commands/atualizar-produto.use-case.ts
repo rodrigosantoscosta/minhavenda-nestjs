@@ -11,6 +11,8 @@ import { Money } from '@domain/value-objects/money.value-object';
 import { AtualizarProdutoDto } from '@app/dtos/produto/atualizar-produto.dto';
 import { ProdutoDto } from '@app/dtos/produto/produto.dto';
 import { ProdutoMapper } from '@app/mappers/produto.mapper';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class AtualizarProdutoUseCase {
@@ -19,6 +21,7 @@ export class AtualizarProdutoUseCase {
     private readonly produtoRepo: IProdutoRepository,
     @Inject(ICATEGORIA_REPOSITORY)
     private readonly categoriaRepo: ICategoriaRepository,
+    private readonly cacheService: AppCacheService,
   ) {}
 
   async executar(id: string, dto: AtualizarProdutoDto): Promise<ProdutoDto> {
@@ -43,6 +46,13 @@ export class AtualizarProdutoUseCase {
     }
 
     const updated = await this.produtoRepo.save(produto);
+
+    // Bust the specific product entry and all listing variants
+    await Promise.all([
+      this.cacheService.del(CACHE_KEYS.PRODUTO_BY_ID(id)),
+      this.cacheService.delByPrefix('produtos:lista:'),
+    ]);
+
     return ProdutoMapper.toDto(updated);
   }
 }

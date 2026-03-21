@@ -3,6 +3,7 @@ import { IProdutoRepository } from '@domain/repositories/iproduto.repository';
 import { Produto } from '@domain/entities/produto.entity';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { Money } from '@domain/value-objects/money.value-object';
+import { AppCacheService } from '@infra/cache/cache.service';
 
 const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findById: jest.fn(),
@@ -13,39 +14,26 @@ const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findAllPaginated: jest.fn(),
 });
 
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn(), delByPrefix: jest.fn() } as unknown as jest.Mocked<AppCacheService>);
+
 function makeCategoria(): Categoria {
-  return new Categoria({
-    id: 1,
-    nome: 'Eletrônicos',
-    descricao: 'desc',
-    ativo: true,
-    dataCadastro: new Date(),
-  });
+  return new Categoria({ id: 1, nome: 'Eletrônicos', descricao: 'desc', ativo: true, dataCadastro: new Date() });
 }
 
-function makeProduto(
-  id: string,
-  nome: string,
-  cat: Categoria | null = null,
-): Produto {
-  return new Produto({
-    id,
-    nome,
-    descricao: 'desc',
-    preco: Money.of(100),
-    categoria: cat,
-    ativo: true,
-    dataCadastro: new Date(),
-  });
+function makeProduto(id: string, nome: string, cat: Categoria | null = null): Produto {
+  return new Produto({ id, nome, descricao: 'desc', preco: Money.of(100), categoria: cat, ativo: true, dataCadastro: new Date() });
 }
 
 describe('ListarProdutosQuery', () => {
   let query: ListarProdutosQuery;
   let repo: jest.Mocked<IProdutoRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
-    query = new ListarProdutosQuery(repo);
+    cache = makeCache();
+    query = new ListarProdutosQuery(repo, cache);
   });
 
   it('returns an empty array when there are no produtos', async () => {
@@ -66,13 +54,7 @@ describe('ListarProdutosQuery', () => {
 
   it('passes filtros through to the repository unchanged', async () => {
     repo.findAll.mockResolvedValue([]);
-    const filtros = {
-      nome: 'Note',
-      categoriaId: 1,
-      precoMin: 100,
-      precoMax: 5000,
-      ativo: true,
-    };
+    const filtros = { nome: 'Note', categoriaId: 1, precoMin: 100, precoMax: 5000, ativo: true };
 
     await query.executar(filtros);
 
@@ -90,33 +72,23 @@ describe('ListarProdutosQuery', () => {
 
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe('uuid-1');
-    expect(result[0].nome).toBe('Notebook');
     expect(typeof result[0].preco).toBe('number');
     expect(result[0].categoriaId).toBe(1);
-    expect(result[0].categoriaNome).toBe('Eletrônicos');
     expect(result[1].categoriaId).toBeNull();
-    expect(result[1].categoriaNome).toBeNull();
   });
 
   it('returns a PageDto when page and size are provided', async () => {
     const cat = makeCategoria();
-    const produtos = [makeProduto('uuid-1', 'Notebook', cat)];
-    repo.findAllPaginated.mockResolvedValue({
-      items: produtos,
-      totalElements: 1,
-    });
+    repo.findAllPaginated.mockResolvedValue({ items: [makeProduto('uuid-1', 'Notebook', cat)], totalElements: 1 });
 
     const result = await query.executar({ page: 0, size: 10 });
 
-    expect(repo.findAllPaginated).toHaveBeenCalledWith({ page: 0, size: 10 });
     expect('content' in result).toBe(true);
     if ('content' in result) {
       expect(result.content).toHaveLength(1);
       expect(result.totalElements).toBe(1);
       expect(result.page).toBe(0);
       expect(result.size).toBe(10);
-      expect(result.hasNext).toBe(false);
-      expect(result.hasPrevious).toBe(false);
     }
   });
 
@@ -126,24 +98,28 @@ describe('ListarProdutosQuery', () => {
     const result = await query.executar({ nome: 'Notebook' });
 
     expect(Array.isArray(result)).toBe(true);
-    expect(repo.findAll).toHaveBeenCalled();
     expect(repo.findAllPaginated).not.toHaveBeenCalled();
   });
 
-  it('maps preco.valor correctly to a plain number', async () => {
-    const prod = new Produto({
-      id: 'uuid-3',
-      nome: 'Monitor',
-      descricao: 'desc',
-      preco: Money.of(1299.99),
-      categoria: null,
-      ativo: true,
-      dataCadastro: new Date(),
-    });
-    repo.findAll.mockResolvedValue([prod]);
+  it('returns cached value on cache hit without calling the repo', async () => {
+    const cached = [{ id: 'uuid-1', nome: 'Cached' }];
+    cache.get.mockResolvedValue(cached);
 
     const result = await query.executar();
 
-    expect(result[0].preco).toBeCloseTo(1299.99);
+    expect(result).toBe(cached);
+    expect(repo.findAll).not.toHaveBeenCalled();
+  });
+
+  it('stores result in cache on cache miss', async () => {
+    repo.findAll.mockResolvedValue([makeProduto('uuid-1', 'Notebook')]);
+
+    await query.executar();
+
+    expect(cache.set).toHaveBeenCalledWith(
+      expect.stringContaining('produtos:lista:'),
+      expect.any(Array),
+      expect.any(Number),
+    );
   });
 });

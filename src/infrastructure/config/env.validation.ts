@@ -26,6 +26,10 @@ const envValidationSchema = Joi.object({
 
   CORS_ALLOWED_ORIGINS: Joi.string().required(),
 
+  REDIS_HOST: Joi.string().hostname().required(),
+  REDIS_PORT: Joi.number().port().required(),
+  REDIS_TTL_SECONDS: Joi.number().positive().default(300),
+
   SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('false'),
 
   TRUSTED_PROXY_CIDRS: Joi.string().allow('').default(''),

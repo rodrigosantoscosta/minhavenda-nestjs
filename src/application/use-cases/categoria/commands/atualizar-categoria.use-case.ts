@@ -7,12 +7,15 @@ import { EntityAlreadyExistsException } from '@domain/exceptions/entity-already-
 import { AtualizarCategoriaDto } from '@app/dtos/categoria/atualizar-categoria.dto';
 import { CategoriaDto } from '@app/dtos/categoria/categoria.dto';
 import { CategoriaMapper } from '@app/mappers/categoria.mapper';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class AtualizarCategoriaUseCase {
   constructor(
     @Inject(ICATEGORIA_REPOSITORY)
     private readonly categoriaRepo: ICategoriaRepository,
+    private readonly cacheService: AppCacheService,
   ) {}
 
   async executar(
@@ -41,6 +44,12 @@ export class AtualizarCategoriaUseCase {
     if (dto.ativo !== undefined) categoria.ativo = dto.ativo;
 
     const updated = await this.categoriaRepo.save(categoria);
+
+    await Promise.all([
+      this.cacheService.del(CACHE_KEYS.CATEGORIAS_ALL),
+      this.cacheService.del(CACHE_KEYS.CATEGORIA_BY_ID(id)),
+    ]);
+
     return CategoriaMapper.toDto(updated);
   }
 }

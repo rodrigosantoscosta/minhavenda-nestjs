@@ -8,12 +8,15 @@ import { Categoria } from '@domain/entities/categoria.entity';
 import { CriarCategoriaDto } from '@app/dtos/categoria/criar-categoria.dto';
 import { CategoriaDto } from '@app/dtos/categoria/categoria.dto';
 import { CategoriaMapper } from '@app/mappers/categoria.mapper';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class CriarCategoriaUseCase {
   constructor(
     @Inject(ICATEGORIA_REPOSITORY)
     private readonly categoriaRepo: ICategoriaRepository,
+    private readonly cacheService: AppCacheService,
   ) {}
 
   async executar(dto: CriarCategoriaDto): Promise<CategoriaDto> {
@@ -35,6 +38,7 @@ export class CriarCategoriaUseCase {
     });
 
     const saved = await this.categoriaRepo.save(categoria);
+    await this.cacheService.del(CACHE_KEYS.CATEGORIAS_ALL);
     return CategoriaMapper.toDto(saved);
   }
 }

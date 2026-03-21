@@ -3,6 +3,8 @@ import { ICategoriaRepository } from '@domain/repositories/icategoria.repository
 import { EntityAlreadyExistsException } from '@domain/exceptions/entity-already-exists.exception';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { CategoriaDto } from '@app/dtos/categoria/categoria.dto';
+import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   findById: jest.fn(),
@@ -11,6 +13,9 @@ const makeRepo = (): jest.Mocked<ICategoriaRepository> => ({
   save: jest.fn(),
   deleteById: jest.fn(),
 });
+
+const makeCache = (): jest.Mocked<AppCacheService> =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined), del: jest.fn().mockResolvedValue(undefined), delByPrefix: jest.fn() } as unknown as jest.Mocked<AppCacheService>);
 
 function makeCategoria(id: number, nome: string): Categoria {
   return new Categoria({
@@ -25,10 +30,12 @@ function makeCategoria(id: number, nome: string): Categoria {
 describe('CriarCategoriaUseCase', () => {
   let useCase: CriarCategoriaUseCase;
   let repo: jest.Mocked<ICategoriaRepository>;
+  let cache: jest.Mocked<AppCacheService>;
 
   beforeEach(() => {
     repo = makeRepo();
-    useCase = new CriarCategoriaUseCase(repo);
+    cache = makeCache();
+    useCase = new CriarCategoriaUseCase(repo, cache);
   });
 
   const dto = {
@@ -81,7 +88,6 @@ describe('CriarCategoriaUseCase', () => {
 
   it('returns a CategoriaDto with id coerced to number', async () => {
     repo.findAll.mockResolvedValue([]);
-    // Simulate PG driver returning BIGSERIAL id as string
     const saved = makeCategoria(5, dto.nome);
     (saved as unknown as { id: unknown }).id = '5';
     repo.save.mockResolvedValue(saved);
@@ -91,5 +97,21 @@ describe('CriarCategoriaUseCase', () => {
     expect(result.id).toBe(5);
     expect(typeof result.id).toBe('number');
     expect(result.nome).toBe('Eletrônicos');
+  });
+
+  it('invalidates CATEGORIAS_ALL cache after saving', async () => {
+    repo.findAll.mockResolvedValue([]);
+    repo.save.mockImplementation(async (c) => c);
+
+    await useCase.executar(dto);
+
+    expect(cache.del).toHaveBeenCalledWith(CACHE_KEYS.CATEGORIAS_ALL);
+  });
+
+  it('does not invalidate cache when save is never reached (duplicate nome)', async () => {
+    repo.findAll.mockResolvedValue([makeCategoria(1, 'Eletrônicos')]);
+
+    await expect(useCase.executar(dto)).rejects.toBeInstanceOf(EntityAlreadyExistsException);
+    expect(cache.del).not.toHaveBeenCalled();
   });
 });

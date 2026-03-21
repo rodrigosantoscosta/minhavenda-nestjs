@@ -16,6 +16,7 @@ import { MessagingModule } from './messaging.module';
 import { RabbitMQModule } from './rabbitmq.module';
 import { AdminModule } from './admin.module';
 import { validateEnv } from '@infra/config/env.validation';
+import { AppCacheModule } from '@infra/cache/cache.module';
 
 @Module({
   imports: [
@@ -53,6 +54,9 @@ import { validateEnv } from '@infra/config/env.validation';
 
     // ── Domain events (in-process) ────────────────────────────────────────────
     EventEmitterModule.forRoot({ global: true }),
+
+    // ── Cache (Redis) ─────────────────────────────────────────────────────────
+    AppCacheModule,
 
     // ── Feature modules ───────────────────────────────────────────────────────
     AuthModule,
