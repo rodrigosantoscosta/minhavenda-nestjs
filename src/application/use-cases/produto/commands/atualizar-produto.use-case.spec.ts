@@ -6,7 +6,7 @@ import { Produto } from '@domain/entities/produto.entity';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { Money } from '@domain/value-objects/money.value-object';
 import { AppCacheService } from '@infra/cache/cache.service';
-import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
+import { CACHE_KEYS, CACHE_PREFIXES } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findById: jest.fn(),
@@ -131,7 +131,7 @@ describe('AtualizarProdutoUseCase', () => {
     await useCase.executar('uuid-prod-1', { ativo: false });
 
     expect(cache.del).toHaveBeenCalledWith(CACHE_KEYS.PRODUTO_BY_ID('uuid-prod-1'));
-    expect(cache.delByPrefix).toHaveBeenCalledWith('produtos:lista:');
+    expect(cache.delByPrefix).toHaveBeenCalledWith(CACHE_PREFIXES.PRODUTOS_LISTA);
   });
 
   it('does not bust cache when produto is not found', async () => {

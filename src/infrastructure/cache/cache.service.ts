@@ -22,6 +22,8 @@ export class AppCacheService {
   /**
    * Remove todas as chaves que começam com o prefixo dado.
    * Funciona com o store ioredis que expõe `store.keys()`.
+   * Se o store não expuser `.keys()` (ex.: in-memory em testes sem mock),
+   * a operação é silenciosa — nenhuma chave é removida e nenhum erro é lançado.
    */
   async delByPrefix(prefix: string): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment

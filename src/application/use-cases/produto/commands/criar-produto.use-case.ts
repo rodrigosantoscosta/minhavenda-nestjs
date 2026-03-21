@@ -19,6 +19,7 @@ import { CriarProdutoDto } from '@app/dtos/produto/criar-produto.dto';
 import { ProdutoDto } from '@app/dtos/produto/produto.dto';
 import { ProdutoMapper } from '@app/mappers/produto.mapper';
 import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_PREFIXES } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class CriarProdutoUseCase {
@@ -64,7 +65,7 @@ export class CriarProdutoUseCase {
     await this.estoqueRepo.save(estoque);
 
     // Bust the produtos listing cache — new product must appear immediately
-    await this.cacheService.delByPrefix('produtos:lista:');
+    await this.cacheService.delByPrefix(CACHE_PREFIXES.PRODUTOS_LISTA);
 
     return ProdutoMapper.toDto(saved);
   }

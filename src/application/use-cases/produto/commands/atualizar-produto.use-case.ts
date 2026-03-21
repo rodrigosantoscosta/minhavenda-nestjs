@@ -12,7 +12,7 @@ import { AtualizarProdutoDto } from '@app/dtos/produto/atualizar-produto.dto';
 import { ProdutoDto } from '@app/dtos/produto/produto.dto';
 import { ProdutoMapper } from '@app/mappers/produto.mapper';
 import { AppCacheService } from '@infra/cache/cache.service';
-import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
+import { CACHE_KEYS, CACHE_PREFIXES } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class AtualizarProdutoUseCase {
@@ -50,7 +50,7 @@ export class AtualizarProdutoUseCase {
     // Bust the specific product entry and all listing variants
     await Promise.all([
       this.cacheService.del(CACHE_KEYS.PRODUTO_BY_ID(id)),
-      this.cacheService.delByPrefix('produtos:lista:'),
+      this.cacheService.delByPrefix(CACHE_PREFIXES.PRODUTOS_LISTA),
     ]);
 
     return ProdutoMapper.toDto(updated);

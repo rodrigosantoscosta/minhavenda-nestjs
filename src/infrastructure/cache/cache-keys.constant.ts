@@ -1,8 +1,12 @@
+export const CACHE_PREFIXES = {
+  PRODUTOS_LISTA: 'produtos:lista:',
+} as const;
+
 export const CACHE_KEYS = {
   CATEGORIAS_ALL: 'categorias:all',
   CATEGORIA_BY_ID: (id: number) => `categorias:${id}`,
   PRODUTO_BY_ID: (id: string) => `produtos:${id}`,
-  PRODUTOS_LISTA: (filtros: string) => `produtos:lista:${filtros}`,
+  PRODUTOS_LISTA: (filtros: string) => `${CACHE_PREFIXES.PRODUTOS_LISTA}${filtros}`,
   DASHBOARD_STATS: 'admin:dashboard:stats',
 } as const;
 

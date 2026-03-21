@@ -4,7 +4,7 @@ import {
   IPRODUTO_REPOSITORY,
 } from '@domain/repositories/iproduto.repository';
 import { AppCacheService } from '@infra/cache/cache.service';
-import { CACHE_KEYS } from '@infra/cache/cache-keys.constant';
+import { CACHE_KEYS, CACHE_PREFIXES } from '@infra/cache/cache-keys.constant';
 
 @Injectable()
 export class ExcluirProdutoUseCase {
@@ -21,7 +21,7 @@ export class ExcluirProdutoUseCase {
 
     await Promise.all([
       this.cacheService.del(CACHE_KEYS.PRODUTO_BY_ID(id)),
-      this.cacheService.delByPrefix('produtos:lista:'),
+      this.cacheService.delByPrefix(CACHE_PREFIXES.PRODUTOS_LISTA),
     ]);
   }
 }

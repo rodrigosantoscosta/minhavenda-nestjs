@@ -7,6 +7,7 @@ import { Produto } from '@domain/entities/produto.entity';
 import { Categoria } from '@domain/entities/categoria.entity';
 import { Money } from '@domain/value-objects/money.value-object';
 import { AppCacheService } from '@infra/cache/cache.service';
+import { CACHE_PREFIXES } from '@infra/cache/cache-keys.constant';
 
 const makeRepo = (): jest.Mocked<IProdutoRepository> => ({
   findById: jest.fn(),
@@ -149,7 +150,7 @@ describe('CriarProdutoUseCase', () => {
 
     await useCase.executar(dto);
 
-    expect(cache.delByPrefix).toHaveBeenCalledWith('produtos:lista:');
+    expect(cache.delByPrefix).toHaveBeenCalledWith(CACHE_PREFIXES.PRODUTOS_LISTA);
   });
 
   it('does not bust cache when save is never reached (categoria not found)', async () => {
