@@ -15,6 +15,9 @@ const envValidationSchema = Joi.object({
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_EXPIRATION: Joi.number().positive().default(86400),
 
+  REFRESH_TOKEN_SECRET: Joi.string().min(32).required(),
+  REFRESH_TOKEN_EXPIRATION: Joi.number().positive().default(604800),
+
   RABBITMQ_URL: Joi.string()
     .uri({ scheme: ['amqp', 'amqps'] })
     .required(),
