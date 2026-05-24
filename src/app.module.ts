@@ -30,20 +30,46 @@ import { validateEnv } from '@infra/config/env.validation';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
-        return {
+
+        // Neon (Vercel) uses DATABASE_URL; classic envs use individual DB_* vars
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+
+        const baseConfig = {
           type: 'postgres' as const,
-          host: configService.getOrThrow<string>('DB_HOST'),
-          port: Number(configService.getOrThrow<number>('DB_PORT')),
-          username: configService.getOrThrow<string>('DB_USERNAME'),
-          password: configService.getOrThrow<string>('DB_PASSWORD'),
-          database: configService.getOrThrow<string>('DB_NAME'),
-          // Render managed Postgres requires SSL; disabled in local dev
-          ssl: isProd ? { rejectUnauthorized: false } : false,
           synchronize: false,
           migrationsRun: true,
           autoLoadEntities: true,
           logging: false,
           migrations: ['dist/migrations/*.js'],
+          // Neon is serverless — keep the pool small to avoid exhausting
+          // the pooler's 10-connection free-tier limit.
+          extra: isProd
+            ? {
+                max: 1,
+                idleTimeoutMillis: 10_000,
+                connectionTimeoutMillis: 5_000,
+              }
+            : {},
+        };
+
+        if (databaseUrl) {
+          // Neon / any DATABASE_URL-style connection (Vercel, Supabase, etc.)
+          return {
+            ...baseConfig,
+            url: databaseUrl,
+            ssl: isProd ? { rejectUnauthorized: false } : false,
+          };
+        }
+
+        // Fallback: classic individual DB_* environment variables (local Docker)
+        return {
+          ...baseConfig,
+          host: configService.getOrThrow<string>('DB_HOST'),
+          port: Number(configService.getOrThrow<number>('DB_PORT')),
+          username: configService.getOrThrow<string>('DB_USERNAME'),
+          password: configService.getOrThrow<string>('DB_PASSWORD'),
+          database: configService.getOrThrow<string>('DB_NAME'),
+          ssl: isProd ? { rejectUnauthorized: false } : false,
         };
       },
     }),

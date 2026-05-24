@@ -3,6 +3,10 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
+/**
+ * Standard NestJS bootstrap — used when running locally or on a classic
+ * server (e.g. Docker / Railway / Render). Vercel uses api/index.ts instead.
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

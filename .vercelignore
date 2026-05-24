@@ -1,0 +1,12 @@
+# Vercel deploy — exclude dev-only files
+.env
+.env.*
+!.env.example
+docker-compose.yml
+Dockerfile
+.dockerignore
+render.yaml
+*.md
+.serena
+test/
+coverage/
