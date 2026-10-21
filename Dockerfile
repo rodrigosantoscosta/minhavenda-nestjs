@@ -2,7 +2,7 @@
 # Multi-stage build: builder → production
 
 # ─── Stage 1: builder ─────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
+FROM node:24.22.1-alpine AS builder
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -23,7 +23,7 @@ COPY src/ ./src/
 RUN pnpm run build
 
 # ─── Stage 2: production ──────────────────────────────────────────────────────
-FROM node:24-alpine AS production
+FROM node:24.22.1-alpine AS production
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
